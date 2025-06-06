@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter au Planning Atelier</title>
+</head>
+<body style="font-family:sans-serif; max-width:600px; margin:auto;">
+  <h2>Ajouter un véhicule au planning</h2>
+  <form action="/ajouter" method="post">
+    <label>Immatriculation :</label><br>
+    <input type="text" name="immat" required><br><br>
+
+    <label>Modèle :</label><br>
+    <input type="text" name="modele" required><br><br>
+
+    <label>Date d'entrée :</label><br>
+    <input type="date" name="entree" required><br><br>
+
+    <label>Date de livraison (avec heure) :</label><br>
+    <input type="datetime-local" name="livraison" required><br><br>
+
+    <label>Statut :</label><br>
+    <select name="statut">
+      <option>En cours</option>
+      <option>Urgent</option>
+      <option>Livré</option>
+    </select><br><br>
+
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <p><a href="/planning.csv" target="_blank">📄 Voir le fichier CSV</a></p>
+  <p><a href="/generate">🔄 Générer index.html</a></p>
+</body>
+</html>

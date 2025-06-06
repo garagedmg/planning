@@ -1,33 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="300"> <!-- actualisation automatique -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Planning Atelier</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Planning Atelier - Garage DMG</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: white;
-      margin: 0;
       padding: 20px;
+      background-color: white;
+      color: #333;
     }
 
     h1 {
       text-align: center;
+      font-size: 2.5em;
       color: #c00000;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.4), 0 0 10px rgba(192,0,0,0.5);
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+
+    #currentTime {
+      text-align: center;
+      font-size: 1.1em;
+      margin-bottom: 20px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 1.4em;
+      font-size: 1.1em;
     }
 
     th {
-      background-color: #c00000;
+      background-color: #333333;
       color: white;
-      padding: 12px;
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ccc;
     }
 
     td {
@@ -36,62 +47,179 @@
       text-align: center;
     }
 
-    .footer {
-      margin-top: 20px;
-      font-size: 1em;
-      color: #c00000;
-      text-align: center;
-      font-weight: bold;
+    tr:nth-child(even) {
+      background-color: #f8f8f8;
     }
 
+    .statut-En\ cours { background-color: #fff3cd; }
+    .statut-Livré     { background-color: white; }
+    .retard           { background-color: #f8d7da !important; }
+    .urgent {
+      background-color: #f44336 !important;
+      color: white !important;
+      font-weight: bold;
+      animation: clignote 1s infinite;
+    }
+
+    @keyframes clignote {
+      0% { background-color: #f44336; }
+      50% { background-color: #ffffff; color: #f44336; }
+      100% { background-color: #f44336; }
+    }
   </style>
+  <script>
+    function updateTime() {
+      const now = new Date();
+      const formatted = now.toLocaleString("fr-FR");
+      document.getElementById("currentTime").innerText = `Heure actuelle : ${formatted}`;
+    }
+
+    function calculerTempsRestant(idTemps, idRetard, idLigne, dateLivraisonStr, statut) {
+      const now = new Date();
+      const livraison = new Date(dateLivraisonStr);
+      const diff = livraison - now;
+
+      const tdTemps = document.getElementById(idTemps);
+      const tdRetard = document.getElementById(idRetard);
+      const ligne = document.getElementById(idLigne);
+
+      if (statut.includes("Urgent")) {
+        ligne.classList.add("urgent");
+      }
+
+      if (statut.includes("Livré")) {
+        tdTemps.innerText = "-";
+        tdRetard.innerText = "Non";
+        return;
+      }
+
+      if (diff > 0) {
+        const jours = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const heures = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        tdTemps.innerText = `${jours}j ${heures}h ${minutes}min`;
+        tdRetard.innerText = "Non";
+      } else {
+        tdTemps.innerText = `Terminé depuis ${Math.abs(Math.floor(diff / (1000 * 60)))} min`;
+        tdRetard.innerText = "Oui";
+        ligne.classList.add("retard");
+      }
+    }
+
+    function masquerLigneLivreeSiAncienne(idLigne, dateLivraisonStr) {
+      const maintenant = new Date();
+      const dateLivraison = new Date(dateLivraisonStr);
+      const diffHeures = (maintenant - dateLivraison) / (1000 * 60 * 60);
+
+      if (diffHeures > 36) {
+        const ligne = document.getElementById(idLigne);
+        if (ligne) ligne.style.display = "none";
+      }
+    }
+
+    function trierLignesPlanning() {
+      const tbody = document.querySelector("#planning tbody");
+      const lignes = Array.from(tbody.querySelectorAll("tr"));
+
+      lignes.sort((a, b) => {
+        const statutA = a.querySelector("td:last-child").textContent;
+        const statutB = b.querySelector("td:last-child").textContent;
+
+        if (statutA.includes("Urgent")) return -1;
+        if (statutB.includes("Urgent")) return 1;
+
+        const dateA = new Date(a.cells[3].textContent);
+        const dateB = new Date(b.cells[3].textContent);
+        return dateA - dateB;
+      });
+
+      lignes.forEach(ligne => tbody.appendChild(ligne));
+    }
+
+    setInterval(() => {
+      calculerTempsRestant("temps1", "retard1", "ligne1", "2025-06-06T17:00", "En cours");
+      calculerTempsRestant("temps2", "retard2", "ligne2", "2025-06-07T10:00", "Urgent");
+      masquerLigneLivreeSiAncienne("ligne3", "2025-06-05T10:00");
+      trierLignesPlanning();
+    }, 1000);
+
+    window.onload = updateTime;
+    setInterval(updateTime, 1000);
+  </script>
 </head>
 <body>
+  <h1>Planning Atelier - Garage DMG</h1>
+  <div id="currentTime">Heure actuelle : --:--</div>
 
-  <h1>Planning Atelier - Aujourd'hui</h1>
-
-  <table>
-    <tr>
-      <th>IMMAT.</th>
-      <th>MODÈLE</th>
-      <th>TRAVAUX À FAIRE</th>
-      <th>STATUT</th>
-    </tr>
-    <tr>
-      <td>GG-167-ZY (VR)</td>
-      <td>CLIO</td>
-      <td>Peinture aile AVG</td>
-      <td>En cours</td>
-    </tr>
-    <tr>
-      <td>GH-362-ZE (VR)</td>
-      <td>COROLLA</td>
-      <td>Carrosserie pare-choc</td>
-      <td>À faire</td>
-    </tr>
-    <tr>
-      <td>FE-433-RQ</td>
-      <td>CORSA</td>
-      <td>Contrôle final</td>
-      <td>Terminé</td>
-    </tr>
-    <tr>
-      <td>FZ-934-NQ</td>
-      <td>SCENIC</td>
-      <td>Révision + CT</td>
-      <td>À venir</td>
-    </tr>
-    <tr>
-      <td>FC-158-QJ</td>
-      <td>IBIZA</td>
-      <td>Débosselage</td>
-      <td>En attente</td>
-    </tr>
+  <table id="planning">
+    <thead>
+      <tr>
+        <th>Immatriculation</th>
+        <th>Modèle</th>
+        <th>Date d’entrée</th>
+        <th>Date de livraison</th>
+        <th>Temps restant</th>
+        <th>Retard</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="statut-En cours" id="ligne1">
+        <td>GG-167-ZY</td>
+        <td>CLIO</td>
+        <td>05/06/2025</td>
+        <td>06/06/2025 17:00</td>
+        <td id="temps1"></td>
+        <td id="retard1"></td>
+        <td>🟡 En cours</td>
+      </tr>
+      <tr class="urgent" id="ligne2">
+        <td>GH-362-ZE</td>
+        <td>COROLLA</td>
+        <td>06/06/2025</td>
+        <td>07/06/2025 10:00</td>
+        <td id="temps2"></td>
+        <td id="retard2"></td>
+        <td>🔴 Urgent</td>
+      </tr>
+      <tr class="statut-Livré" id="ligne3">
+        <td>FC-158-QJ</td>
+        <td>IBIZA</td>
+        <td>04/06/2025</td>
+        <td>05/06/2025 10:00</td>
+        <td id="temps3">-</td>
+        <td id="retard3">Non</td>
+        <td>✅ Livré</td>
+      </tr>
+ <tr class="statut-Livré" id="ligne3">
+        <td>FC-158-QJ</td>
+        <td>IBIZA</td>
+        <td>04/06/2025</td>
+        <td>05/06/2025 10:00</td>
+        <td id="temps3">-</td>
+        <td id="retard3">Non</td>
+        <td>✅ Livré</td>
+ <tr class="statut-Livré" id="ligne3">
+        <td>FC-158-QJ</td>
+        <td>IBIZA</td>
+        <td>04/06/2025</td>
+        <td>05/06/2025 10:00</td>
+        <td id="temps3">-</td>
+        <td id="retard3">Non</td>
+        <td>✅ Livré</td>
+ <tr class="statut-Livré" id="ligne3">
+        <td>FC-158-QJ</td>
+        <td>IBIZA</td>
+        <td>04/06/2025</td>
+        <td>05/06/2025 10:00</td>
+        <td id="temps3">-</td>
+        <td id="retard3">Non</td>
+        <td>✅ Livré</td>
+    </tbody>
   </table>
 
-  <div class="footer">
-    Merci de bien vouloir contrôler le bon fonctionnement des éléments réparés.
-  </div>
-
+  <marquee behavior="scroll" direction="left" scrollamount="5" style="margin-top:30px; font-size: 1.1em; color: #c00000; font-weight: bold;">
+    Merci de bien vouloir vérifier le bon fonctionnement des éléments du véhicule svp.
+  </marquee>
 </body>
 </html>
